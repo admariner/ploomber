@@ -6,7 +6,6 @@ from unittest.mock import Mock
 import pytest
 from click.testing import CliRunner
 
-from ploomber.io._commander import Commander
 from ploomber.cli import install as install_module
 from ploomber.cli.cli import install
 
