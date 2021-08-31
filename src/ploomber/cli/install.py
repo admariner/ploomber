@@ -139,7 +139,9 @@ def _find_conda_root(conda_bin):
     conda_bin = Path(conda_bin)
 
     for parent in conda_bin.parents:
-        if parent.name.lower() == 'miniconda3':
+        # I've seen variations of this. on windows: Miniconda3 and miniconda3
+        # on linux miniconda3 and miniconda
+        if parent.name.lower() in {'miniconda3', 'miniconda'}:
             return parent
 
     raise RuntimeError(
