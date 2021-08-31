@@ -138,7 +138,7 @@ def main_conda():
 
 def _get_pip_folder_and_bin_name():
     folder = 'Scripts' if os.name == 'nt' else 'bin'
-    bin_name = 'pip.EXE' if os.name == 'nt' else 'pip'
+    bin_name = 'pip.exe' if os.name == 'nt' else 'pip'
     return folder, bin_name
 
 
