@@ -90,7 +90,10 @@ def main_conda():
                            'again (e.g., "conda activate base")')
 
     # get current installed envs
-    envs = cmdr.run('conda', 'env', 'list', '--json', capture_output=True)
+    conda = shutil.which('conda')
+    mamba = shutil.which('mamba')
+
+    envs = cmdr.run(conda, 'env', 'list', '--json', capture_output=True)
     already_installed = any([
         env for env in json.loads(envs)['envs']
         # only check in the envs folder, ignore envs in other locations
@@ -101,11 +104,11 @@ def main_conda():
     # otherwise it might lead to an intermitent error (permission denied
     # on vcruntime140.dll)
     if already_installed and os.name == 'nt':
-        raise ValueError(f'Environemnt {env_name!r} already exists, '
+        raise ValueError(f'Environment {env_name!r} already exists, '
                          f'delete it and try again '
                          f'(conda env remove --name {env_name})')
 
-    pkg_manager = 'mamba' if shutil.which('mamba') else 'conda'
+    pkg_manager = mamba if mamba else conda
     cmdr.run(pkg_manager,
              'env',
              'create',
@@ -114,10 +117,9 @@ def main_conda():
              '--force',
              description='Creating env')
 
-    pip = _locate_pip_inside_conda(env_name)
-    _try_pip_install_setup_py(cmdr, pip)
+    _try_pip_install_setup_py(cmdr, env_name)
 
-    env_lock = cmdr.run('conda',
+    env_lock = cmdr.run(conda,
                         'env',
                         'export',
                         '--no-build',
@@ -133,8 +135,24 @@ def main_conda():
     _next_steps(cmdr, cmd_activate)
 
 
+def _find_conda_root(conda_bin):
+    conda_bin = Path(conda_bin)
+
+    for parent in conda_bin.parents:
+        if parent.name.lower() == 'miniconda3':
+            return parent
+
+    raise RuntimeError(
+        'Failed to locate conda root from '
+        f'directory: {str(conda_bin)!r}. Please submit an issue: '
+        'https://github.com/ploomber/ploomber/issues/new')
+
+
 def _locate_pip_inside_conda(env_name):
-    conda_root = Path(shutil.which('conda')).parents[1]
+    """
+    Locates pip inside the conda env with a given name
+    """
+    conda_root = _find_conda_root(shutil.which('conda'))
     folder = 'Scripts' if os.name == 'nt' else 'bin'
     bin_name = 'pip.EXE' if os.name == 'nt' else 'pip'
     pip = str(conda_root / 'envs' / env_name / folder / bin_name)
@@ -148,8 +166,14 @@ def _locate_pip_inside_conda(env_name):
     return pip
 
 
-def _try_pip_install_setup_py(cmdr, pip):
+def _try_pip_install_setup_py(cmdr, env_name):
+    """
+    Call "pip install --editable ." if setup.py exists. Automatically locates
+    the appropriate pip binary given the env name
+    """
     if Path('setup.py').exists():
+        pip = _locate_pip_inside_conda(env_name)
+
         cmdr.run(pip,
                  'install',
                  '--editable',
@@ -166,7 +190,7 @@ def _try_conda_install_and_lock_dev(cmdr, pkg_manager, env_name):
                  'environment.dev.yml',
                  description='Installing dev dependncies')
 
-        env_lock = cmdr.run('conda',
+        env_lock = cmdr.run(shutil.which('conda'),
                             'env',
                             'export',
                             '--no-build',
