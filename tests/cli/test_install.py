@@ -153,7 +153,7 @@ def test_conda_error_missing_env_and_reqs(tmp_directory):
     assert 'Expected a' in result.stdout
 
 
-def test_error_if_env_yml_but_conda_not_installed(monkeypatch):
+def test_error_if_env_yml_but_conda_not_installed(tmp_directory, monkeypatch):
     _write_sample_conda_env()
     runner = CliRunner()
     mock = Mock(return_value=False)
