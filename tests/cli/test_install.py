@@ -60,7 +60,7 @@ def cleanup_conda_tmp_env():
 
 
 def _write_sample_conda_env(name='environment.yml'):
-    Path(name).write_text(f'name: my_tmp_env\ndependencies:\n- pip')
+    Path(name).write_text('name: my_tmp_env\ndependencies:\n- pip')
 
 
 def _write_sample_pip_req(name='requirements.txt'):
